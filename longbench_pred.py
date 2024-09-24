@@ -16,7 +16,7 @@ from langchain_core.documents import Document
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default=None, choices=["memoryllm-7b", "memory-openllama-3b", "longlora-7b-16k", "longllama-3b", "longllama-3b-v2", "openllama-3b-2k", "openllama-3b-v2-2k", "llama2-7b-4k", "llama2-7b-chat-4k", "longchat-v1.5-7b-32k", "xgen-7b-8k", "internlm-7b-8k", "chatglm2-6b", "chatglm2-6b-32k", "vicuna-v1.5-7b-16k"])
+    parser.add_argument('--model', type=str, default=None, choices=["memoryllm-8b","memoryllm-7b", "memory-openllama-3b", "longlora-7b-16k", "longllama-3b", "longllama-3b-v2", "openllama-3b-2k", "openllama-3b-v2-2k", "llama2-7b-4k", "llama2-7b-chat-4k", "longchat-v1.5-7b-32k", "xgen-7b-8k", "internlm-7b-8k", "chatglm2-6b", "chatglm2-6b-32k", "vicuna-v1.5-7b-16k"])
     parser.add_argument('--e', action='store_true', help="Evaluate on LongBench-E")
     parser.add_argument("--path", default=None, type=str)
     parser.add_argument("--max_length", default=None, type=int)
@@ -245,6 +245,12 @@ def load_model_and_tokenizer(path, model_name, device):
             model = MemoryLLM.from_pretrained(path, device_map='auto')
         else:
             model = MemoryLLM.from_pretrained(path).to(device)
+    elif model_name == 'memoryllm-8b':
+        tokenizer = AutoTokenizer.from_pretrained(path)
+        if args.split_model:
+            model = MemoryLLM.from_pretrained(path, device_map='auto')
+        else:
+            model = MemoryLLM.from_pretrained(path).to(device)    
     elif "llama2" in model_name or 'openllama' in model_name:
         # replace_llama_attn_with_flash_attn()
         tokenizer = LlamaTokenizer.from_pretrained(path)
@@ -289,6 +295,10 @@ if __name__ == '__main__':
     if args.max_length is not None:
         model2maxlen[model_name] = args.max_length
         print("Override max length")
+    if torch.cuda.is_available():
+        # Get the number of CUDA devices
+        num_devices = torch.cuda.device_count()
+        print(f"Number of CUDA devices available: {num_devices}")
     model, tokenizer = load_model_and_tokenizer(model2path[model_name], model_name, device)
     max_length = model2maxlen[model_name]
     if args.e:
@@ -325,7 +335,7 @@ if __name__ == '__main__':
 
         else:
             # data = load_from_disk(f"longbench/data/{dataset}")
-            data = load_dataset('THUDM/LongBench', dataset, split='test')
+            data = load_dataset('THUDM/LongBench', dataset, split='test',trust_remote_code=True)
             # data.save_to_disk(f"longbench/data/{dataset}")
 
             if args.path is None:
