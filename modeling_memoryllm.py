@@ -55,7 +55,34 @@ logger = logging.get_logger(__name__)
 _CONFIG_FOR_DOC = "LlamaConfig"
 
 
-class MemoryLMOutputWithPastAndCrossAttentions(CausalLMOutputWithCrossAttentions):
+# class MemoryLMOutputWithPastAndCrossAttentions(CausalLMOutputWithCrossAttentions):
+#     def __init__(
+#         self,
+#         loss=None,
+#         logits=None,
+#         past_key_values=None,
+#         hidden_states=None,
+#         attentions=None,
+#         cross_attentions=None,
+#         delta_memory=None,
+#         last_hidden_state=None,
+#         remaining_indices=None
+#     ):
+#         #TODO:fix the two time initialization twice error（改为全用子类initialization无用，还是两次；排除多gpu原因，2个和3个都是两次）
+#         print("Initializing MemoryLMOutputWithPastAndCrossAttentions")
+#         super().__init__(
+#             loss=loss,
+#             logits=logits,
+#             past_key_values=past_key_values,
+#             hidden_states=hidden_states,
+#             attentions=attentions,
+#             cross_attentions=cross_attentions,
+#         )
+#         self.delta_memory = delta_memory
+#         self.remaining_indices = remaining_indices
+#         self.last_hidden_state = last_hidden_state
+# fix:可能是因为版本原因，更新到了4.45.0，父类出现了啥问题（采用父类后，initialize了两次，不是很理解）
+class MemoryLMOutputWithPastAndCrossAttentions:
     def __init__(
         self,
         loss=None,
@@ -68,18 +95,22 @@ class MemoryLMOutputWithPastAndCrossAttentions(CausalLMOutputWithCrossAttentions
         last_hidden_state=None,
         remaining_indices=None
     ):
-        super().__init__(
-            loss=loss,
-            logits=logits,
-            past_key_values=past_key_values,
-            hidden_states=hidden_states,
-            attentions=attentions,
-            cross_attentions=cross_attentions,
-        )
+        print("Initializing MemoryLMOutputWithPastAndCrossAttentions")
+        self.loss = loss
+        self.logits = logits
+        self.past_key_values = past_key_values
+        self.hidden_states = hidden_states
+        self.attentions = attentions
+        self.cross_attentions = cross_attentions
         self.delta_memory = delta_memory
         self.remaining_indices = remaining_indices
         self.last_hidden_state = last_hidden_state
-
+    def __iter__(self):
+        # Example: iterate over non-None attributes
+        for attr in vars(self):
+            value = getattr(self, attr)
+            if value is not None:
+                yield (attr, value)
 
 
 class LlamaRMSNorm(nn.Module):
@@ -1564,8 +1595,11 @@ class MemoryLLM(LlamaForCausalLM):
                 is_injection=True,
                 output_delta_memory=True,
                 return_dict=True)
+        # try find bug origin: no use
+        # result = output
 
         if update_memory:
+            print("output.delta_memory shape:",output.delta_memory.shape)
             self.update_memory_with_delta_memory(output.delta_memory)
             return output.delta_memory
 
@@ -1983,6 +2017,18 @@ class MemoryLLM(LlamaForCausalLM):
         if not return_dict:
             return tuple(v for v in [loss, logits, hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
         
+        #fix:no use
+        # MemoryOutput=MemoryLMOutputWithPastAndCrossAttentions(
+        #     loss=loss,
+        #     logits=logits,
+        #     last_hidden_state=hidden_states,
+        #     past_key_values=next_cache,
+        #     hidden_states=all_hidden_states,
+        #     attentions=all_self_attns,
+        #     delta_memory=delta_memory,
+        # )
+        # return MemoryOutput
+        # origin
         return MemoryLMOutputWithPastAndCrossAttentions(
             loss=loss,
             logits=logits,

@@ -246,6 +246,7 @@ def load_model_and_tokenizer(path, model_name, device):
         else:
             model = MemoryLLM.from_pretrained(path).to(device)
     elif model_name == 'memoryllm-8b':
+        # tokenizer = LlamaTokenizer.from_pretrained(path,use_fast=True)
         tokenizer = AutoTokenizer.from_pretrained(path)
         if args.split_model:
             model = MemoryLLM.from_pretrained(path, device_map='auto')
@@ -279,6 +280,11 @@ def load_model_and_tokenizer(path, model_name, device):
         model = model.to(device)
         model = model.bfloat16()
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast=False)
+    # for llama3-8b(my edit) 
+    model = model.bfloat16()
+    model.config._attn_implementation = 'flash_attention_2'
+
+    #--------------------------#
     model = model.eval()
     return model, tokenizer
 

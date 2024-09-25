@@ -32,7 +32,10 @@ class NQDataset(Dataset):
             if tokenizer_path is None:
                 self.tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2")
             else:
-                self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer_path)
+                ## my edit
+                # self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer_path)
+                from transformers import AutoTokenizer
+                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         else:
@@ -42,7 +45,7 @@ class NQDataset(Dataset):
 
         count = 0
 
-        indices = np.load(os.path.join(os.path.dirname(filename), 'indices_nq_4.npy'))
+        indices = np.load(os.path.join(os.path.dirname(filename), 'indices_nq_4.npy'),allow_pickle=True)
 
         with open(filename, 'r') as file:
             for line in file:

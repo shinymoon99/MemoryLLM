@@ -382,7 +382,9 @@ if __name__ == "__main__":
                             
                         else:
                             model = MemoryLLM.from_pretrained(opt.model, device_map='auto')
-                    
+                    ## my edit
+                    # model = model.to(torch.float16)
+                    model = model.bfloat16()
                     if tokenizer is None:
                         tokenizer = LlamaTokenizer.from_pretrained(opt.model)
 
@@ -468,12 +470,14 @@ if __name__ == "__main__":
                         model = MemoryLLM.from_pretrained(opt.model).cuda()
                     else:
                         model = MemoryLLM.from_pretrained(opt.model, device_map='auto')
-                
-                model = model.to(torch.float16)
-                
+                ## my edit
+                # model = model.to(torch.float16)
+                model = model.bfloat16()
                 if tokenizer is None:
-                    tokenizer = LlamaTokenizer.from_pretrained(opt.model)
-
+                    ## my edit
+                    # tokenizer = LlamaTokenizer.from_pretrained(opt.model)
+                    from transformers import AutoTokenizer
+                    tokenizer = AutoTokenizer.from_pretrained(opt.model)
                 middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
 
                 generated_results = {

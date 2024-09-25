@@ -28,7 +28,10 @@ class SQuADDataset(Dataset):
             if tokenizer_path is None:
                 self.tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2")
             else:
-                self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer_path)
+                ## my edit
+                # self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer_path)
+                from transformers import AutoTokenizer
+                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)                
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         else:
@@ -36,7 +39,7 @@ class SQuADDataset(Dataset):
             self.tokenizer = tokenizer
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        indices = np.load(os.path.join(os.path.dirname(filename), 'indices_squad_3.npy'))
+        indices = np.load(os.path.join(os.path.dirname(filename), 'indices_squad_3.npy'),allow_pickle=True)
 
         # load unrelated contexts:
         if num_unrelated_contexts > 0:
