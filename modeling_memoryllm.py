@@ -1599,7 +1599,7 @@ class MemoryLLM(LlamaForCausalLM):
         # result = output
 
         if update_memory:
-            print("output.delta_memory shape:",output.delta_memory.shape)
+            # print("output.delta_memory shape:",output.delta_memory.shape)
             self.update_memory_with_delta_memory(output.delta_memory)
             return output.delta_memory
 
@@ -1989,8 +1989,8 @@ class MemoryLLM(LlamaForCausalLM):
             next_cache = next_cache.to_legacy_cache()
 
         if output_delta_memory:
-            print("all_delta_memory[0].device",all_delta_memory[0].device)
-            print("all_delta_memory[-1].device",all_delta_memory[-1].device)
+            # print("all_delta_memory[0].device",all_delta_memory[0].device)
+            # print("all_delta_memory[-1].device",all_delta_memory[-1].device)
             if all_delta_memory[0].device != all_delta_memory[-1].device:
                 assert not self.training
                 device = all_delta_memory[0].device
