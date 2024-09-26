@@ -4,6 +4,24 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+        // {
+        //     "name": "Python Debugger: Current File with Arguments",
+        //     "type": "debugpy",
+        //     "request": "launch",
+        //     "program": "${file}",
+        //     "console": "integratedTerminal",
+        //     "args": [
+        //         "--model", "../memoryllm-8b",
+        //         "--nuc", "10",
+        //         "--datasets", "naturalqa", "squad",
+        //         "--num_samples", "100",
+        //         "--split_model", "True"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "0,1"
+        //     }
+        // },
         {
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
@@ -17,7 +35,7 @@
                 "--split_model", "True"
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "0,1"
+                "CUDA_VISIBLE_DEVICES": "1,2"
             }
         }
     ]

@@ -95,7 +95,7 @@ class MemoryLMOutputWithPastAndCrossAttentions:
         last_hidden_state=None,
         remaining_indices=None
     ):
-        print("Initializing MemoryLMOutputWithPastAndCrossAttentions")
+        # print("Initializing MemoryLMOutputWithPastAndCrossAttentions")
         self.loss = loss
         self.logits = logits
         self.past_key_values = past_key_values
@@ -1672,8 +1672,14 @@ class MemoryLLM(LlamaForCausalLM):
                     for idx in range(len(self.memory)):
                         current_memory = self.memory.data[idx].detach()
                         current_memory = self.drop_memory(current_memory, unsequeezed=False)
-                        self.memory.data[idx] = torch.cat([current_memory, delta_memory[idx]], dim=0)
+                        # fix(cry):fix of error of on multi device
 
+                        # self.memory.data[idx] = torch.cat([current_memory, delta_memory[idx]], dim=0)
+                        if current_memory.device != delta_memory.device:
+                            self.memory.data[idx] = torch.cat([current_memory, delta_memory[idx].to(current_memory.device)], dim=0)
+                        else:
+                            self.memory.data[idx] = torch.cat([current_memory, delta_memory[idx]], dim=0)
+                         # -----------------------
                 else:
 
                     current_memory = self.memory.data.detach() # detach might be unnecessary, but just to make sure
@@ -1983,7 +1989,8 @@ class MemoryLLM(LlamaForCausalLM):
             next_cache = next_cache.to_legacy_cache()
 
         if output_delta_memory:
-
+            print("all_delta_memory[0].device",all_delta_memory[0].device)
+            print("all_delta_memory[-1].device",all_delta_memory[-1].device)
             if all_delta_memory[0].device != all_delta_memory[-1].device:
                 assert not self.training
                 device = all_delta_memory[0].device

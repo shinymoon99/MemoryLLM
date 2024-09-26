@@ -211,7 +211,7 @@ def run_qa(model, tokenizer, dataset, step=1):
 
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, collate_fn=collate_fn_with_params)
     print(f"Loaded {len(dataset)} samples for development")
-
+    print(model)
     model.eval()
 
     preds_with_context = []
@@ -235,7 +235,7 @@ def run_qa(model, tokenizer, dataset, step=1):
     with torch.no_grad():
 
         for batch_idx, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
-            
+            print("batch_idx",batch_idx)
             batch = [x.cuda() for x in batch]
 
             context_ids, context_attention_mask, \
@@ -285,7 +285,13 @@ def run_qa(model, tokenizer, dataset, step=1):
                 )
 
                 if opt.related_position == 'begin':
-
+                    #fix(cry):no use
+                    # sentence_ids = sentence_ids.to(model.memory.device)
+                    # sentence_attention_mask = sentence_attention_mask.to(model.memory.device)
+                    print("model.device",model.device)
+                    print("sentence_ids.device",sentence_ids.device)
+                    #bug location:model generate的第二次运行generate往后走才出问题(好像)所以是（runqa跑了两次？）
+                    
                     output = model.generate(
                         inputs=sentence_ids, 
                         attention_mask=sentence_attention_mask,
