@@ -288,8 +288,8 @@ def run_qa(model, tokenizer, dataset, step=1):
                     #fix(cry):no use
                     # sentence_ids = sentence_ids.to(model.memory.device)
                     # sentence_attention_mask = sentence_attention_mask.to(model.memory.device)
-                    print("model.device",model.device)
-                    print("sentence_ids.device",sentence_ids.device)
+                    # print("model.device",model.device)
+                    # print("sentence_ids.device",sentence_ids.device)
                     #bug location:model generate的第二次运行generate往后走才出问题(好像)所以是（runqa跑了两次？）
                     
                     output = model.generate(

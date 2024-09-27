@@ -68,6 +68,7 @@ def get_pred(model, tokenizer, data, max_length, max_gen, prompt_format, dataset
         backup_memory = model.memory.clone().detach().cpu()
 
     count = 0
+    print("data len":len(data))
     for json_obj in tqdm(data):
 
         count += 1
