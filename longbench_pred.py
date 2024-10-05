@@ -68,7 +68,7 @@ def get_pred(model, tokenizer, data, max_length, max_gen, prompt_format, dataset
         backup_memory = model.memory.clone().detach().cpu()
 
     count = 0
-    print("data len":len(data))
+    print("data len:",len(data))
     for json_obj in tqdm(data):
 
         count += 1
@@ -343,7 +343,7 @@ if __name__ == '__main__':
         else:
             # data = load_from_disk(f"longbench/data/{dataset}")
             data = load_dataset('THUDM/LongBench', dataset, split='test',trust_remote_code=True)
-            # data.save_to_disk(f"longbench/data/{dataset}")
+            data.save_to_disk(f"longbench/data/{dataset}")
 
             if args.path is None:
                 if args.max_length is None:

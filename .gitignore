@@ -3,4 +3,6 @@ __pycache__
 train/data/redpajama/documents
 train/data/redpajama/listings
 train/logs
+data/
+longbench/data/hotpotqa
 locals
