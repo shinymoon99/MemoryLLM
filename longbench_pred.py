@@ -341,9 +341,9 @@ if __name__ == '__main__':
             # save dataset
 
         else:
-            # data = load_from_disk(f"longbench/data/{dataset}")
-            data = load_dataset('THUDM/LongBench', dataset, split='test',trust_remote_code=True)
-            data.save_to_disk(f"longbench/data/{dataset}")
+            data = load_from_disk(f"longbench/data/{dataset}")
+            # data = load_dataset('THUDM/LongBench', dataset, split='test',trust_remote_code=True)
+            # data.save_to_disk(f"longbench/data/{dataset}")
 
             if args.path is None:
                 if args.max_length is None:
