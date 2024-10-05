@@ -11,7 +11,7 @@ with open('data/corpus/0.2.0.jsonl', 'r') as jsonl_file:
     for line in jsonl_file:
         if line.strip():  # Skip empty lines
             data = json.loads(line)
-            context = template['versicode'].format(
+            context = template['versicode_cot'].format(
                 file_path=data['file_path'],
                 source_code=data['source_code']
             )

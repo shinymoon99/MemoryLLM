@@ -23,15 +23,20 @@ for item in data['data']:
     version = item.get('version', '')
 
     # Create the prompt using the template
-    input = template['versicode'].format(description=description, masked_code=masked_code)
+    input = template['versicode_cot'].format(description=description, masked_code=masked_code)
     context = ""
     
     output_data.append({
         "input": input,
         "context": context,
-        "answer": answer,
+        "answers": [answer],
         "dependency": dependency,
-        "version": version
+        "version": version,
+        "length": 8616,
+        "dataset": "versicode",
+        "language": "en",
+        "all_classes": None,
+        "_id": str(data["data"].index(item))  # Use index as _id
     })
 
 # Write all outputs to a single JSON file

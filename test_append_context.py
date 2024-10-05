@@ -10,6 +10,8 @@ with open('data/versicode/completed_code.json', 'r') as f:
 with open('longbench_config/buildContext.json', 'r') as template_file:
     template = json.load(template_file)
 
+
+'''step to add context to completed_code.json'''
 # Iterate through items in completed_code.json
 for item in data:
     dependency = item.get('dependency')
@@ -43,7 +45,30 @@ for item in data:
             item['context'] = combined_context
 
 # Write the updated data back to completed_code.json
-with open('data/versicode/completed_code.json', 'w') as f:
+# with open('data/versicode/completed_code.json', 'w') as f:
+#     json.dump(data, f, indent=2)
+
+# print("Context has been appended to completed_code.json")
+
+# with open("longbench/data/versicode/completed_code.json", "r") as f:
+#     data = json.load(f)
+
+
+# '''step to add features in order to be compatible with longbench'''
+# # Modify each item in the list
+# for item in data:
+#     # Add new elements
+#     item['length'] = 8616
+#     item['dataset'] = 'versicode'
+#     item['language'] = 'en'
+#     item['all_classes'] = None
+#     item['_id'] = str(data.index(item))  # Use index as _id
+    
+#     # Convert 'answer' to 'answers' list
+#     item['answers'] = [item.pop('answer')]
+
+# Save the modified data back to the JSON file
+with open("data/versicode/completed_code.json", "w") as f:
     json.dump(data, f, indent=2)
 
-print("Context has been appended to completed_code.json")
+print("JSON file has been updated successfully.")
