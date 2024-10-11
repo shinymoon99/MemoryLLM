@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #json-container {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        .key {
+            color: #881391;
+        }
+        .string {
+            color: #1a1aa6;
+        }
+        .number {
+            color: #1c00cf;
+        }
+        .boolean {
+            color: #0000ff;
+        }
+        .null {
+            color: #808080;
+        }
+    </style>
+</head>
+<body>
+    <div id="json-container"></div>
+
+    <script>
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                var cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                    } else {
+                        cls = 'string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function formatCode(code) {
+            return code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        fetch('data/downstream_application_code_block.json')
+            .then(response => response.json())
+            .then(data => {
+                let output = '';
+                data.data.forEach((item, index) => {
+                    output += `<h2>Item ${index + 1}</h2>`;
+                    for (let key in item) {
+                        if (key === 'code' || key === 'masked_code') {
+                            output += `<strong>${key}:</strong><pre><code>${formatCode(item[key])}</code></pre>`;
+                        } else {
+                            output += `<strong>${key}:</strong> ${item[key]}<br>`;
+                        }
+                    }
+                    output += '<hr>';
+                });
+                document.getElementById('json-container').innerHTML = output;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('json-container').innerHTML = `<p>Error loading data: ${error.message}</p>`;
+            });
+    </script>
+</body>
+</html>

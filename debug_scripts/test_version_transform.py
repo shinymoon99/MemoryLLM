@@ -18,18 +18,18 @@ def extract_version(version_string):
 
 # ... (rest of the code remains unchanged)
 
-# Read the completed_code.json file
-with open('data/versicode/completed_code.json', 'r') as f:
-    data = json.load(f)
+# # Read the completed_code.json file
+# with open('data/versicode/completed_code.json', 'r') as f:
+#     data = json.load(f)
 
-# Iterate through items in completed_code.json
-for item in data:
-    version = item.get('version')
+# # Iterate through items in completed_code.json
+# for item in data:
+#     version = item.get('version')
 
-    # Extract the version number
-    version_num = extract_version(version)
+#     # Extract the version number
+#     version_num = extract_version(version)
 
-    # Print the input and output
-    # print(f"input: {version}")
-    # print(f"output: {version_num}")
-    # print()  # Add a blank line for readability between entries
+#     # Print the input and output
+#     # print(f"input: {version}")
+#     # print(f"output: {version_num}")
+#     # print()  # Add a blank line for readability between entries

@@ -371,7 +371,8 @@ if __name__ == '__main__':
             continue
 
         prompt_format = dataset2prompt[dataset]
-        max_gen = dataset2maxlen[dataset]
+        # max_gen = dataset2maxlen[dataset]
+        max_gen = 32
         preds = get_pred(model, tokenizer, data, args.max_length, max_gen, prompt_format, dataset, device, model_name, args.retrieval, exclude_or=args.exclude_or)
         with open(out_path, "w", encoding="utf-8") as f:
             for pred in preds:

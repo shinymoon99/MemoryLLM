@@ -1,0 +1,1380 @@
+description:
+The function `delete_noisy_char` removes noisy characters from a string and returns the cleaned string. The function `extend_vocab` extends a pretrained vocabulary by adding a new token and its corresponding vector to the vocabulary.
+masked_code:
+import torch
+
+def delete_noisy_char(s):
+    s = (
+        s.replace(",", " ")
+        .replace("/", " ")
+        .replace('"', " ")
+        .replace("-", " ")
+        .replace(";", " ")
+        .replace(".", " ")
+        .replace("&", " ")
+        .replace("?", " ")
+        .replace("!", " ")
+        .replace("(", " ")
+        .replace(")", " ")
+    )
+    s = s.strip()
+    return s
+
+def extend_vocab(pretrained_vocab, token, vector):
+    <line_mask>
+    pretrained_vocab.stoi[token] = pretrained_vocab.vectors.shape[0]
+    pretrained_vocab.vectors = torch.cat([pretrained_vocab.vectors, vector], dim=0)
+
+
+
+<item_end>
+
+description:
+This code ensures that only the first process performs a barrier synchronization using PyTorch's distributed communication library.
+masked_code:
+from contextlib import contextmanager
+import torch
+
+
+@contextmanager
+def only_first_process(local_rank):
+    if local_rank not in [-1, 0]:
+        # noinspection PyUnresolvedReferences
+        torch.distributed.barrier()
+
+    try:
+        yield
+    finally:
+        if local_rank == 0:
+            # noinspection PyUnresolvedReferences
+            <line_mask>
+
+<item_end>
+
+description:
+This code defines a custom dataset class called IdDataset that inherits from FairseqDataset. The __getitem__ method returns the index passed to it. The __len__ method returns the length of the dataset as 0. The collater method returns a PyTorch tensor containing the samples passed to it.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import FairseqDataset
+
+
+class IdDataset(FairseqDataset):
+    def __getitem__(self, index):
+        return index
+
+    def __len__(self):
+        return 0
+
+    def collater(self, samples):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a class called RollDataset that inherits from BaseWrapperDataset. It takes a dataset and shifts as input parameters and rolls the items in the dataset by the specified shifts.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import BaseWrapperDataset
+
+
+class RollDataset(BaseWrapperDataset):
+    def __init__(self, dataset, shifts):
+        super().__init__(dataset)
+        self.shifts = shifts
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a custom GroupNorm layer implemented in fp32 to be used during fp16 training. The forward method applies Group Normalization to the input tensor in fp32 format and returns the output tensor in the same data type as the input.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+Layer norm done in fp32 (for fp16 training)
+"""
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Fp32GroupNorm(nn.GroupNorm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input):
+        output = F.group_norm(
+            input.float(),
+            self.num_groups,
+            self.weight.float() if self.weight is not None else None,
+            self.bias.float() if self.bias is not None else None,
+            self.eps,
+        )
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines two functions for implementing the Gaussian Error Linear Units (GELUs) activation function in PyTorch: gelu_accurate and gelu. The gelu_accurate function calculates the GELU activation using a mathematical formula, while the gelu function uses the built-in PyTorch function nn.functional.gelu to compute the activation.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+See "Gaussian Error Linear Units (GELUs)" by Dan Hendrycks and Kevin Gimpel with
+the corresponding GitHub repo: https://github.com/hendrycks/GELUs
+"""
+
+import math
+
+import torch
+import torch.nn as nn
+
+
+def gelu_accurate(x):
+    if not hasattr(gelu_accurate, "_a"):
+        gelu_accurate._a = math.sqrt(2 / math.pi)
+    return (
+        0.5 * x * (1 + torch.tanh(gelu_accurate._a * (x + 0.044715 * torch.pow(x, 3))))
+    )
+
+
+def gelu(x: torch.Tensor) -> torch.Tensor:
+    <line_mask>
+
+<item_end>
+
+description:
+This function unfolds a 1-dimensional tensor along the time dimension, adding padding and creating a 4-dimensional output tensor.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch.nn.functional as F
+
+
+def unfold1d(x, kernel_size, padding_l, pad_value=0):
+    """unfold T x B x C to T x B x C x K"""
+    if kernel_size > 1:
+        T, B, C = x.size()
+        x = F.pad(
+            x, (0, 0, 0, 0, padding_l, kernel_size - 1 - padding_l), value=pad_value
+        )
+        <line_mask>
+    else:
+        x = x.unsqueeze(3)
+    return x
+
+<item_end>
+
+description:
+This code defines a custom dataset class in PyTorch for storing and retrieving integer indices.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import FairseqDataset
+
+
+class IdDataset(FairseqDataset):
+    def __getitem__(self, index):
+        return index
+
+    def __len__(self):
+        return 0
+
+    def collater(self, samples):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a class called RollDataset that inherits from BaseWrapperDataset. It takes a dataset and shifts as input parameters. When the __getitem__ method is called with an index, it retrieves an item from the dataset and returns the item after rolling it using torch.roll function with the specified shifts.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import BaseWrapperDataset
+
+
+class RollDataset(BaseWrapperDataset):
+    def __init__(self, dataset, shifts):
+        super().__init__(dataset)
+        self.shifts = shifts
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        <line_mask>
+
+<item_end>
+
+description:
+This code implements layer normalization in floating point 32-bit precision for training with floating point 16-bit data.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+Layer norm done in fp32 (for fp16 training)
+"""
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Fp32GroupNorm(nn.GroupNorm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input):
+        output = F.group_norm(
+            input.float(),
+            self.num_groups,
+            self.weight.float() if self.weight is not None else None,
+            self.bias.float() if self.bias is not None else None,
+            self.eps,
+        )
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines two functions, gelu_accurate and gelu, that implement the Gaussian Error Linear Units (GELUs) activation function. The gelu_accurate function calculates the GELU activation function using a mathematical formula, while the gelu function uses a built-in PyTorch function to compute the GELU activation function.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+See "Gaussian Error Linear Units (GELUs)" by Dan Hendrycks and Kevin Gimpel with
+the corresponding GitHub repo: https://github.com/hendrycks/GELUs
+"""
+
+import math
+
+import torch
+import torch.nn as nn
+
+
+def gelu_accurate(x):
+    if not hasattr(gelu_accurate, "_a"):
+        gelu_accurate._a = math.sqrt(2 / math.pi)
+    return (
+        0.5 * x * (1 + torch.tanh(gelu_accurate._a * (x + 0.044715 * torch.pow(x, 3))))
+    )
+
+
+def gelu(x: torch.Tensor) -> torch.Tensor:
+    <line_mask>
+
+<item_end>
+
+description:
+This function unfolds a 1-dimensional tensor along the time dimension to include a specified kernel size, padding, and pad value.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch.nn.functional as F
+
+
+def unfold1d(x, kernel_size, padding_l, pad_value=0):
+    """unfold T x B x C to T x B x C x K"""
+    if kernel_size > 1:
+        <line_mask>
+        x = F.pad(
+            x, (0, 0, 0, 0, padding_l, kernel_size - 1 - padding_l), value=pad_value
+        )
+        x = x.as_strided((T, B, C, kernel_size), (B * C, C, 1, B * C))
+    else:
+        x = x.unsqueeze(3)
+    return x
+
+<item_end>
+
+description:
+This code defines a unit test case for a normalization function in a speech recognition data utility module. The test input is a tensor of values, and the code applies a mean-variance normalization operation on the input tensor. The code then checks if there are no NaN values in the output tensor and if the output tensor is equal to the input tensor.
+masked_code:
+#!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+import unittest
+
+import torch
+from examples.speech_recognition.data import data_utils
+
+
+class DataUtilsTest(unittest.TestCase):
+    def test_normalization(self):
+        sample_len1 = torch.tensor(
+            [
+                [
+                    -0.7661,
+                    -1.3889,
+                    -2.0972,
+                    -0.9134,
+                    -0.7071,
+                    -0.9765,
+                    -0.8700,
+                    -0.8283,
+                    0.7512,
+                    1.3211,
+                    2.1532,
+                    2.1174,
+                    1.2800,
+                    1.2633,
+                    1.6147,
+                    1.6322,
+                    2.0723,
+                    3.1522,
+                    3.2852,
+                    2.2309,
+                    2.5569,
+                    2.2183,
+                    2.2862,
+                    1.5886,
+                    0.8773,
+                    0.8725,
+                    1.2662,
+                    0.9899,
+                    1.1069,
+                    1.3926,
+                    1.2795,
+                    1.1199,
+                    1.1477,
+                    1.2687,
+                    1.3843,
+                    1.1903,
+                    0.8355,
+                    1.1367,
+                    1.2639,
+                    1.4707,
+                ]
+            ]
+        )
+        out = data_utils.apply_mv_norm(sample_len1)
+        <line_mask>
+        assert (out == sample_len1).all()
+
+<item_end>
+
+description:
+This code defines a class called IdDataset that inherits from FairseqDataset. The class implements the __getitem__ method to return the index passed as argument and the __len__ method to always return 0. Additionally, it defines a collater method that converts the input samples into a torch tensor.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import FairseqDataset
+
+
+class IdDataset(FairseqDataset):
+    def __getitem__(self, index):
+        return index
+
+    def __len__(self):
+        return 0
+
+    def collater(self, samples):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a class called RollDataset that inherits from BaseWrapperDataset. It takes a dataset and shifts as input parameters. The __init__ method initializes the class with the dataset and shifts. The __getitem__ method returns the item from the dataset with shifted values based on the specified shifts.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import BaseWrapperDataset
+
+
+class RollDataset(BaseWrapperDataset):
+    def __init__(self, dataset, shifts):
+        super().__init__(dataset)
+        self.shifts = shifts
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        <line_mask>
+
+<item_end>
+
+description:
+This code implements layer normalization in fp32 for fp16 training using group normalization.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+Layer norm done in fp32 (for fp16 training)
+"""
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Fp32GroupNorm(nn.GroupNorm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input):
+        output = F.group_norm(
+            input.float(),
+            self.num_groups,
+            self.weight.float() if self.weight is not None else None,
+            self.bias.float() if self.bias is not None else None,
+            self.eps,
+        )
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines two functions for computing the Gaussian Error Linear Unit (GELU) activation function: gelu_accurate and gelu. The gelu_accurate function calculates the GELU activation function using a more accurate formula, while the gelu function uses the gelu implementation from the torch.nn.functional module.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+See "Gaussian Error Linear Units (GELUs)" by Dan Hendrycks and Kevin Gimpel with
+the corresponding GitHub repo: https://github.com/hendrycks/GELUs
+"""
+
+import math
+
+import torch
+import torch.nn as nn
+
+
+def gelu_accurate(x):
+    if not hasattr(gelu_accurate, "_a"):
+        gelu_accurate._a = math.sqrt(2 / math.pi)
+    return (
+        0.5 * x * (1 + torch.tanh(gelu_accurate._a * (x + 0.044715 * torch.pow(x, 3))))
+    )
+
+
+def gelu(x: torch.Tensor) -> torch.Tensor:
+    <line_mask>
+
+<item_end>
+
+description:
+This function unfolds a 1-dimensional tensor x with shape T x B x C into a tensor with shape T x B x C x K, where K is the kernel size. It pads the input tensor x with zeros on the left side based on the given padding_l value and the kernel size. If the kernel size is greater than 1, it pads the tensor accordingly and creates a new tensor with a strided view of the original tensor. If the kernel size is 1, it simply adds a new dimension to the tensor.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch.nn.functional as F
+
+
+def unfold1d(x, kernel_size, padding_l, pad_value=0):
+    """unfold T x B x C to T x B x C x K"""
+    if kernel_size > 1:
+        <line_mask>
+        x = F.pad(
+            x, (0, 0, 0, 0, padding_l, kernel_size - 1 - padding_l), value=pad_value
+        )
+        x = x.as_strided((T, B, C, kernel_size), (B * C, C, 1, B * C))
+    else:
+        x = x.unsqueeze(3)
+    return x
+
+<item_end>
+
+description:
+The code performs a unit test for normalization function in the data_utils module for speech recognition. It tests whether the output tensor after applying the mean-variance normalization to a sample tensor is not NaN and is equal to the original sample tensor.
+masked_code:
+#!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+import unittest
+
+import torch
+from examples.speech_recognition.data import data_utils
+
+
+class DataUtilsTest(unittest.TestCase):
+    def test_normalization(self):
+        sample_len1 = torch.tensor(
+            [
+                [
+                    -0.7661,
+                    -1.3889,
+                    -2.0972,
+                    -0.9134,
+                    -0.7071,
+                    -0.9765,
+                    -0.8700,
+                    -0.8283,
+                    0.7512,
+                    1.3211,
+                    2.1532,
+                    2.1174,
+                    1.2800,
+                    1.2633,
+                    1.6147,
+                    1.6322,
+                    2.0723,
+                    3.1522,
+                    3.2852,
+                    2.2309,
+                    2.5569,
+                    2.2183,
+                    2.2862,
+                    1.5886,
+                    0.8773,
+                    0.8725,
+                    1.2662,
+                    0.9899,
+                    1.1069,
+                    1.3926,
+                    1.2795,
+                    1.1199,
+                    1.1477,
+                    1.2687,
+                    1.3843,
+                    1.1903,
+                    0.8355,
+                    1.1367,
+                    1.2639,
+                    1.4707,
+                ]
+            ]
+        )
+        out = data_utils.apply_mv_norm(sample_len1)
+        <line_mask>
+        assert (out == sample_len1).all()
+
+<item_end>
+
+description:
+This code defines a custom dataset class called IdDataset that inherits from FairseqDataset. It implements the __getitem__ method to return the index of the element in the dataset, the __len__ method to return the length of the dataset (which is always 0), and the collater method to convert a list of samples into a tensor using torch.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import FairseqDataset
+
+
+class IdDataset(FairseqDataset):
+
+    def __getitem__(self, index):
+        return index
+
+    def __len__(self):
+        return 0
+
+    def collater(self, samples):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a class RollDataset that is a subclass of BaseWrapperDataset. It takes a dataset and shifts as input and rolls each item in the dataset by the specified shifts using torch.roll function.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import BaseWrapperDataset
+
+
+class RollDataset(BaseWrapperDataset):
+
+    def __init__(self, dataset, shifts):
+        super().__init__(dataset)
+        self.shifts = shifts
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        <line_mask>
+
+<item_end>
+
+description:
+The function `LayerNorm` implements Layer Normalization, which normalizes the input tensor across a specified normalized shape, with options for setting epsilon, elementwise affine parameters, and whether to use CUDA if available. If CUDA is available and the `apex` package is installed, it uses the FusedLayerNorm implementation; otherwise, it falls back to the PyTorch `LayerNorm` implementation.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+
+def LayerNorm(normalized_shape, eps=1e-5, elementwise_affine=True, export=False):
+    <line_mask>
+        try:
+            from apex.normalization import FusedLayerNorm
+            return FusedLayerNorm(normalized_shape, eps, elementwise_affine)
+        except ImportError:
+            pass
+    return torch.nn.LayerNorm(normalized_shape, eps, elementwise_affine)
+
+<item_end>
+
+description:
+This function unfolds a 1-dimensional tensor along the third dimension, by padding and striding the input tensor based on the specified kernel size and padding parameters.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch.nn.functional as F
+
+
+def unfold1d(x, kernel_size, padding_l, pad_value=0):
+    '''unfold T x B x C to T x B x C x K'''
+    if kernel_size > 1:
+        T, B, C = x.size()
+        x = F.pad(x, (0, 0, 0, 0, padding_l, kernel_size - 1 - padding_l), value=pad_value)
+        <line_mask>
+    else:
+        x = x.unsqueeze(3)
+    return x
+
+<item_end>
+
+description:
+This code defines a custom dataset class called IdDataset that returns the index as the item and has a length of 0. It also includes a collater method that converts samples into a PyTorch tensor.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import FairseqDataset
+
+
+class IdDataset(FairseqDataset):
+    def __getitem__(self, index):
+        return index
+
+    def __len__(self):
+        return 0
+
+    def collater(self, samples):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a class called RollDataset, which is a wrapper dataset that takes in another dataset and shifts the data by a specified amount before returning it.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import BaseWrapperDataset
+
+
+class RollDataset(BaseWrapperDataset):
+    def __init__(self, dataset, shifts):
+        super().__init__(dataset)
+        self.shifts = shifts
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a custom layer normalization function called Fp32GroupNorm, which performs layer normalization in fp32 for fp16 training. It inherits from the nn.GroupNorm class and overrides its forward method to calculate layer normalization using the group_norm function from the torch.nn.functional module.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+Layer norm done in fp32 (for fp16 training)
+"""
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Fp32GroupNorm(nn.GroupNorm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input):
+        output = F.group_norm(
+            input.float(),
+            self.num_groups,
+            self.weight.float() if self.weight is not None else None,
+            self.bias.float() if self.bias is not None else None,
+            self.eps,
+        )
+        <line_mask>
+
+<item_end>
+
+description:
+The function defined in the provided Python code calculates the Gaussian Error Linear Unit (GELU) activation function. The function implements an accurate version of GELU using a mathematical formula that involves basic arithmetic operations and hyperbolic tangent function. The code also includes a more efficient version of GELU using the PyTorch library's built-in functionality.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+See "Gaussian Error Linear Units (GELUs)" by Dan Hendrycks and Kevin Gimpel with
+the corresponding GitHub repo: https://github.com/hendrycks/GELUs
+"""
+
+import math
+
+import torch
+import torch.nn as nn
+
+
+def gelu_accurate(x):
+    if not hasattr(gelu_accurate, "_a"):
+        gelu_accurate._a = math.sqrt(2 / math.pi)
+    return (
+        0.5 * x * (1 + torch.tanh(gelu_accurate._a * (x + 0.044715 * torch.pow(x, 3))))
+    )
+
+
+def gelu(x: torch.Tensor) -> torch.Tensor:
+    <line_mask>
+
+<item_end>
+
+description:
+This code defines a function named `unfold1d` that takes input x of shape T x B x C and unfolds it to shape T x B x C x K where K is the kernel size. The function pads the input x with pad_value if the kernel size is greater than 1 and then reshapes it using the strided view. If the kernel size is 1, it simply adds a dimension to the input x.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch.nn.functional as F
+
+
+def unfold1d(x, kernel_size, padding_l, pad_value=0):
+    """unfold T x B x C to T x B x C x K"""
+    if kernel_size > 1:
+        T, B, C = x.size()
+        <line_mask>
+            x, (0, 0, 0, 0, padding_l, kernel_size - 1 - padding_l), value=pad_value
+        )
+        x = x.as_strided((T, B, C, kernel_size), (B * C, C, 1, B * C))
+    else:
+        x = x.unsqueeze(3)
+    return x
+
+<item_end>
+
+description:
+This code defines a custom dataset class called IdDataset that returns the index as the item, has a length of 0, and converts samples to a PyTorch tensor in the collater function.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import FairseqDataset
+
+
+class IdDataset(FairseqDataset):
+    def __getitem__(self, index):
+        return index
+
+    def __len__(self):
+        return 0
+
+    def collater(self, samples):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a `RollDataset` class that wraps around another dataset and applies a cyclic shift to the data items retrieved from the original dataset when accessed.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch
+
+from . import BaseWrapperDataset
+
+
+class RollDataset(BaseWrapperDataset):
+    def __init__(self, dataset, shifts):
+        super().__init__(dataset)
+        self.shifts = shifts
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        <line_mask>
+
+<item_end>
+
+description:
+This code implements layer normalization in single precision (fp32) for half precision (fp16) training.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+Layer norm done in fp32 (for fp16 training)
+"""
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Fp32GroupNorm(nn.GroupNorm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input):
+        output = F.group_norm(
+            input.float(),
+            self.num_groups,
+            self.weight.float() if self.weight is not None else None,
+            self.bias.float() if self.bias is not None else None,
+            self.eps,
+        )
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a Gaussian Error Linear Unit (GELU) activation function in Python for neural networks. The `gelu_accurate` function implements the GELU activation function using a mathematical formula, while the `gelu` function utilizes the GELU implementation provided by PyTorch's `torch.nn.functional.gelu` function.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+See "Gaussian Error Linear Units (GELUs)" by Dan Hendrycks and Kevin Gimpel with
+the corresponding GitHub repo: https://github.com/hendrycks/GELUs
+"""
+
+import math
+
+import torch
+import torch.nn as nn
+
+
+def gelu_accurate(x):
+    if not hasattr(gelu_accurate, "_a"):
+        gelu_accurate._a = math.sqrt(2 / math.pi)
+    return (
+        0.5 * x * (1 + torch.tanh(gelu_accurate._a * (x + 0.044715 * torch.pow(x, 3))))
+    )
+
+
+def gelu(x: torch.Tensor) -> torch.Tensor:
+    <line_mask>
+
+<item_end>
+
+description:
+This function unfolds a 3D tensor along the last dimension, adding an extra dimension based on the specified kernel size and padding.
+masked_code:
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import torch.nn.functional as F
+
+
+def unfold1d(x, kernel_size, padding_l, pad_value=0):
+    """unfold T x B x C to T x B x C x K"""
+    if kernel_size > 1:
+        T, B, C = x.size()
+        x = F.pad(
+            x, (0, 0, 0, 0, padding_l, kernel_size - 1 - padding_l), value=pad_value
+        )
+        x = x.as_strided((T, B, C, kernel_size), (B * C, C, 1, B * C))
+    else:
+        <line_mask>
+    return x
+
+<item_end>
+
+description:
+This code sets up the configuration and dependencies for the LayoutLM project, including specifying the project name, version, author, URL, description, required packages, and optional development dependencies.
+masked_code:
+#!/usr/bin/env python3
+import torch
+from setuptools import find_packages, setup
+
+<line_mask>
+assert torch_ver >= [1, 4], "Requires PyTorch >= 1.4"
+
+setup(
+    name="layoutlm",
+    version="0.0",
+    author="Yiheng Xu",
+    url="https://github.com/microsoft/unilm/tree/master/layoutlm",
+    description="LayoutLM",
+    packages=find_packages(exclude=("configs", "tests")),
+    python_requires=">=3.6",
+    install_requires=[
+        "transformers==2.9.0",
+        "tensorboardX==2.0",
+        "lxml==4.9.1",
+        "seqeval==0.0.12",
+        "Pillow==9.3.0",
+    ],
+    extras_require={
+        "dev": ["flake8==3.8.2", "isort==4.3.21", "black==19.10b0", "pre-commit==2.4.0"]
+    },
+)
+
+<item_end>
+
+description:
+This script outputs information about the environment, such as the Torch version, CUDA availability, CUDA version, CuDNN version, number of GPUs available, and NCCL version.
+masked_code:
+#!/usr/bin/env python3
+
+# coding=utf-8
+# Copyright 2020 The HuggingFace Inc. team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# this script dumps information about the environment
+
+import torch
+
+
+print("Torch version:", torch.__version__)
+print("Cuda available:", torch.cuda.is_available())
+print("Cuda version:", torch.version.cuda)
+print("CuDNN version:", torch.backends.cudnn.version())
+<line_mask>
+print("NCCL version:", torch.cuda.nccl.version())
+
+<item_end>
+
+description:
+The function get_optimizer(config, parameters) returns an optimizer based on the provided configuration (config) and model parameters (parameters). The optimizer can be selected from Adam, RMSProp, or SGD, with specific parameters such as learning rate (lr), weight decay, momentum, beta values, and AMSGrad. If the optimizer type is not one of the specified options, it raises a NotImplementedError.
+masked_code:
+import torch.optim as optim
+
+
+def get_optimizer(config, parameters):
+    <line_mask>
+        return optim.Adam(parameters, lr=config.optim.lr, weight_decay=config.optim.weight_decay,
+                          betas=(config.optim.beta1, 0.999), amsgrad=config.optim.amsgrad,
+                          eps=config.optim.eps)
+    elif config.optim.optimizer == 'RMSProp':
+        return optim.RMSprop(parameters, lr=config.optim.lr, weight_decay=config.optim.weight_decay)
+    elif config.optim.optimizer == 'SGD':
+        return optim.SGD(parameters, lr=config.optim.lr, momentum=0.9)
+    else:
+        raise NotImplementedError(
+            'Optimizer {} not understood.'.format(config.optim.optimizer))
+
+<item_end>
+
+description:
+This code returns the appropriate autocast function based on the precision parameter provided.
+masked_code:
+import torch
+from contextlib import suppress
+
+
+def get_autocast(precision):
+    if precision == 'amp':
+        <line_mask>
+    elif precision == 'amp_bfloat16' or precision == 'amp_bf16':
+        # amp_bfloat16 is more stable than amp float16 for clip training
+        return lambda: torch.cuda.amp.autocast(dtype=torch.bfloat16)
+    else:
+        return suppress
+
+<item_end>
+
+description:
+The code defines a class called BaseModel that extends torch.nn.Module and has a method load() which loads a model from a file specified by a given file path. The method first loads the model's parameters from the file using torch.load(), then checks if there is an "optimizer" key in the parameters dictionary. If it exists, the method updates the parameters to only contain the "model" key. Finally, the method loads the state dictionary of the model with the modified parameters.
+masked_code:
+import torch
+
+
+class BaseModel(torch.nn.Module):
+    def load(self, path):
+        """Load model from file.
+
+        Args:
+            path (str): file path
+        """
+        <line_mask>
+
+        if "optimizer" in parameters:
+            parameters = parameters["model"]
+
+        self.load_state_dict(parameters)
+
+<item_end>
+
+description:
+This code defines a class called HSwish that implements the hard Swish activation function, which is defined as Hswish(x) = x * ReLU6(x + 3) / 6. It takes an input tensor x and applies the hard Swish function to it, returning the output tensor.
+masked_code:
+# Copyright (c) OpenMMLab. All rights reserved.
+import torch.nn as nn
+
+from .registry import ACTIVATION_LAYERS
+
+
+@ACTIVATION_LAYERS.register_module()
+class HSwish(nn.Module):
+    """Hard Swish Module.
+
+    This module applies the hard swish function:
+
+    .. math::
+        Hswish(x) = x * ReLU6(x + 3) / 6
+
+    Args:
+        inplace (bool): can optionally do the operation in-place.
+            Default: False.
+
+    Returns:
+        Tensor: The output tensor.
+    """
+
+    def __init__(self, inplace=False):
+        super(HSwish, self).__init__()
+        self.act = nn.ReLU6(inplace)
+
+    def forward(self, x):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines a Scale class in Python using PyTorch, which is a learnable scale parameter. The Scale layer scales the input by a learnable factor, multiplying a learnable scale parameter with the input of any shape.
+masked_code:
+# Copyright (c) OpenMMLab. All rights reserved.
+import torch
+import torch.nn as nn
+
+
+class Scale(nn.Module):
+    """A learnable scale parameter.
+
+    This layer scales the input by a learnable factor. It multiplies a
+    learnable scale parameter of shape (1,) with input of any shape.
+
+    Args:
+        scale (float): Initial value of scale factor. Default: 1.0
+    """
+
+    def __init__(self, scale=1.0):
+        super(Scale, self).__init__()
+        <line_mask>
+
+    def forward(self, x):
+        return x * self.scale
+
+<item_end>
+
+description:
+This code defines a custom activation function called Swish, which applies the Swish function to an input tensor x. The Swish function is defined as Swish(x) = x * Sigmoid(x), where Sigmoid is the sigmoid function. The module returns the output tensor after applying the Swish function.
+masked_code:
+# Copyright (c) OpenMMLab. All rights reserved.
+import torch
+import torch.nn as nn
+
+from .registry import ACTIVATION_LAYERS
+
+
+@ACTIVATION_LAYERS.register_module()
+class Swish(nn.Module):
+    """Swish Module.
+
+    This module applies the swish function:
+
+    .. math::
+        Swish(x) = x * Sigmoid(x)
+
+    Returns:
+        Tensor: The output tensor.
+    """
+
+    def __init__(self):
+        super(Swish, self).__init__()
+
+    def forward(self, x):
+        <line_mask>
+
+<item_end>
+
+description:
+This code defines and tests a random window discriminator model that takes input signals and condition features to generate scores. The model has multiple window sizes and different downsample factors for the conditional discriminator layers. The test function generates random input signals and condition features, passes them through the model, and checks the output scores for correctness.
+masked_code:
+import numpy as np
+import torch
+
+from TTS.vocoder.models.random_window_discriminator import RandomWindowDiscriminator
+
+
+def test_rwd():
+    layer = RandomWindowDiscriminator(
+        cond_channels=80,
+        window_sizes=(512, 1024, 2048, 4096, 8192),
+        cond_disc_downsample_factors=[(8, 4, 2, 2, 2), (8, 4, 2, 2), (8, 4, 2), (8, 4), (4, 2, 2)],
+        hop_length=256,
+    )
+    <line_mask>
+    c = torch.rand([4, 80, 22050 // 256])
+
+    scores, _ = layer(x, c)
+    assert len(scores) == 10
+    assert np.all(scores[0].shape == (4, 1, 1))
+
+<item_end>
+
+description:
+This code defines a subclass called FullbandMelganGenerator that inherits from the MelganGenerator class. It initializes the subclass with certain parameters such as input and output channels, kernel sizes, and number of residual blocks. The class also includes an inference method that takes conditional features as input, pads the features, and returns the output using the layers of the generator.
+masked_code:
+import torch
+
+from TTS.vocoder.models.melgan_generator import MelganGenerator
+
+
+class FullbandMelganGenerator(MelganGenerator):
+    def __init__(
+        self,
+        in_channels=80,
+        out_channels=1,
+        proj_kernel=7,
+        base_channels=512,
+        upsample_factors=(2, 8, 2, 2),
+        res_kernel=3,
+        num_res_blocks=4,
+    ):
+        super().__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            proj_kernel=proj_kernel,
+            base_channels=base_channels,
+            upsample_factors=upsample_factors,
+            res_kernel=res_kernel,
+            num_res_blocks=num_res_blocks,
+        )
+
+    @torch.no_grad()
+    def inference(self, cond_features):
+        cond_features = cond_features.to(self.layers[1].weight.device)
+        <line_mask>
+            cond_features, (self.inference_padding, self.inference_padding), "replicate"
+        )
+        return self.layers(cond_features)
+
+<item_end>
+
+description:
+This code defines a dummy neural network model using PyTorch's nn.Module class. The model includes a sequential neural network that flattens the input tensor and applies a linear transformation to output a tensor of size 10. The forward method defines how the input tensor is passed through the model and returns the output tensor.
+masked_code:
+from torch import nn
+
+
+class DummyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        <line_mask>
+
+    def forward(self, x):
+        return self.main(x)
+
+<item_end>
+
+description:
+This code defines a class 'BaseModel' that inherits from torch.nn.Module and contains a method 'load' to load a model from a file specified by the given path. The method loads the model parameters from the file using torch.load, and if the parameters contain an "optimizer" key, it extracts the "model" parameters. Finally, it loads the state dictionary of the model with the extracted parameters.
+masked_code:
+import torch
+
+
+class BaseModel(torch.nn.Module):
+    def load(self, path):
+        """Load model from file.
+
+        Args:
+            path (str): file path
+        """
+        <line_mask>
+
+        if "optimizer" in parameters:
+            parameters = parameters["model"]
+
+        self.load_state_dict(parameters)
+
+<item_end>
+
+description:
+This code defines a Hard Swish Module in PyTorch, which applies the hard swish function to input tensors. The hard swish function is defined as Hswish(x) = x * ReLU6(x + 3) / 6. The module takes an optional parameter inplace to specify whether the operation should be performed in-place or not. The forward function of the module applies the hard swish function to the input tensor x and returns the output tensor.
+masked_code:
+# Copyright (c) OpenMMLab. All rights reserved.
+import torch.nn as nn
+
+from .registry import ACTIVATION_LAYERS
+
+
+@ACTIVATION_LAYERS.register_module()
+class HSwish(nn.Module):
+    """Hard Swish Module.
+
+    This module applies the hard swish function:
+
+    .. math::
+        Hswish(x) = x * ReLU6(x + 3) / 6
+
+    Args:
+        inplace (bool): can optionally do the operation in-place.
+            Default: False.
+
+    Returns:
+        Tensor: The output tensor.
+    """
+
+    def __init__(self, inplace=False):
+        super(HSwish, self).__init__()
+        <line_mask>
+
+    def forward(self, x):
+        return x * self.act(x + 3) / 6
+
+<item_end>
+
+description:
+This code defines a Scale class in Python using PyTorch, which implements a learnable scale parameter. The Scale class scales the input tensor by a learnable factor specified by a scale parameter. The scale factor is initialized with a default value of 1.0 and can be adjusted during training. The forward method of the Scale class multiplies the input tensor by the learnable scale parameter to scale the input tensor.
+masked_code:
+# Copyright (c) OpenMMLab. All rights reserved.
+import torch
+import torch.nn as nn
+
+
+class Scale(nn.Module):
+    """A learnable scale parameter.
+
+    This layer scales the input by a learnable factor. It multiplies a
+    learnable scale parameter of shape (1,) with input of any shape.
+
+    Args:
+        scale (float): Initial value of scale factor. Default: 1.0
+    """
+
+    def __init__(self, scale=1.0):
+        super(Scale, self).__init__()
+        <line_mask>
+
+    def forward(self, x):
+        return x * self.scale
+
+<item_end>
+
+description:
+This code defines a Swish activation function module in PyTorch. This module applies the Swish function to the input tensor, which is defined as Swish(x) = x * Sigmoid(x). The module takes the input tensor x and returns the output tensor after applying the Swish function.
+masked_code:
+# Copyright (c) OpenMMLab. All rights reserved.
+import torch
+import torch.nn as nn
+
+from .registry import ACTIVATION_LAYERS
+
+
+@ACTIVATION_LAYERS.register_module()
+class Swish(nn.Module):
+    """Swish Module.
+
+    This module applies the swish function:
+
+    .. math::
+        Swish(x) = x * Sigmoid(x)
+
+    Returns:
+        Tensor: The output tensor.
+    """
+
+    def __init__(self):
+        super(Swish, self).__init__()
+
+    def forward(self, x):
+        <line_mask>
+
+<item_end>
+

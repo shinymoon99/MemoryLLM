@@ -3,7 +3,8 @@ import json
 import os
 from test_version_transform import extract_version
 # Read the completed_code.json file
-with open('data/versicode/completed_code.json', 'r') as f:
+input_file_name = 'downstream_application_code_token_originprompt'
+with open(f'data/versicode_input/{input_file_name}.json', 'r') as f:
     data = json.load(f)
 
 # Read the template from buildContext.json
@@ -12,6 +13,10 @@ with open('longbench_config/buildContext.json', 'r') as template_file:
 
 
 '''step to add context to completed_code.json'''
+# Create a cache directory
+cache_dir = 'data/context_cache'
+os.makedirs(cache_dir, exist_ok=True)
+
 # Iterate through items in completed_code.json
 for item in data:
     dependency = item.get('dependency')
@@ -22,7 +27,14 @@ for item in data:
         # Construct the path to the corresponding corpus file
         corpus_file = f'data/version_corpus/{dependency}/{version}.jsonl'
         
-        if os.path.exists(corpus_file):
+        # Construct the path for the cache file
+        cache_file = f'{cache_dir}/{dependency}/{version}.json'
+        
+        if os.path.exists(cache_file):
+            # If cache exists, load the context from cache
+            with open(cache_file, 'r') as f:
+                item['context'] = json.load(f)['context']
+        elif os.path.exists(corpus_file):
             contexts = []
             with open(corpus_file, 'r') as jsonl_file:
                 for line in jsonl_file:
@@ -43,6 +55,11 @@ for item in data:
 
             # Append the combined context to the item
             item['context'] = combined_context
+            
+            # Save the context to cache
+            os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+            with open(cache_file, 'w') as f:
+                json.dump({'context': combined_context}, f)
 
 # Write the updated data back to completed_code.json
 # with open('data/versicode/completed_code.json', 'w') as f:
@@ -68,7 +85,7 @@ for item in data:
 #     item['answers'] = [item.pop('answer')]
 
 # Save the modified data back to the JSON file
-with open("data/versicode/completed_code.json", "w") as f:
+with open(f"data/versicode_input/{input_file_name}_scContext.json", "w") as f:
     json.dump(data, f, indent=2)
 
 print("JSON file has been updated successfully.")
