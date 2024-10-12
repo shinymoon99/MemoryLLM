@@ -36,7 +36,7 @@ You are a professional Python engineer, and I will provide functional descriptio
 # please make sure the context to inject into the memory is larger than 16 tokens, this is the hard minimum when training the model. The memory will be disturbed when less than 16 tokens are injected into the memory. 
 model.inject_memory(tokenizer(ctx, return_tensors='pt', add_special_tokens=False).input_ids.cuda(), update_memory=True)
 inputs = tokenizer(input_untokenized, return_tensors='pt', add_special_tokens=False).input_ids.cuda()
-outputs = model.generate(input_ids=inputs, max_new_tokens=100)
+outputs = model.generate(input_ids=inputs, max_new_tokens=16)
 response = tokenizer.decode(outputs[0][inputs.shape[1]:])
 print("response:",response)
 # response：

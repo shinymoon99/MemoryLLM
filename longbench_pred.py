@@ -224,7 +224,7 @@ def get_pred(model, tokenizer, data, max_length, max_gen, prompt_format, dataset
 
         pred = tokenizer.decode(output[context_length:], skip_special_tokens=True)
         pred = post_process(pred, model_name)
-        preds.append({"pred": pred, "answers": json_obj["answers"], "all_classes": json_obj["all_classes"], "length": json_obj["length"]})
+        preds.append({"model_output": pred, "answer": json_obj["answer"],"description": json_obj["description"], "all_classes": json_obj["all_classes"], "length": json_obj["length"], "id": json_obj["id"],"code":json_obj["masked_code"]})
     return preds
 
 def seed_everything(seed):

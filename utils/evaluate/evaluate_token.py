@@ -8,7 +8,7 @@ import math
 
 model_name = 'Llama-3-70b-chat-hf'
 
-result_path = f'output/togetherai/Llama-3-8b-chat-hf/downstream_application_code_token_out.json'
+result_path = f'output/versicodeOutput_token_dac.jsonl'
 # result_path = f'../../dataset/final_dataset/final_generate_token_result/{model_name}/docstring.json'
 # result_path = f'../../dataset/final_dataset/final_generate_token_result/{model_name}/respository.json'
 # result_path = f'../../dataset/final_dataset/final_generate_token_result/{model_name}/stackoverflow.json'
@@ -28,11 +28,15 @@ def compute_score_k(answer:str, model_output:list, k:int):
 
 
 
-with open(result_path, 'r', encoding='utf-8')as fr:
-    lodict = json.load(fr)
-data = lodict
+# with open(result_path, 'r', encoding='utf-8')as fr:
+#     lodict = json.load(fr)
+# data = lodict
 
-data_list = data['data']
+# data_list = data['data']
+data_list = []
+with open(result_path, 'r', encoding='utf-8') as fr:
+    for line in fr:
+        data_list.append(json.loads(line))
 score_list = []
 
 for d in data_list[:100]:
@@ -44,7 +48,7 @@ for d in data_list[:100]:
     score_list.append(temp_score)
 
 
-
+# print(sum(score_list))
 final_score = sum(score_list)/len(score_list)
 
 print(final_score)
