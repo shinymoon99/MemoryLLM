@@ -3,7 +3,9 @@ import json
 import os
 from test_version_transform import extract_version
 # Read the completed_code.json file
-input_file_name = 'da_block_originprompt'
+# input_file_name = 'da_block_originprompt'
+input_file_name = 'da_token_woCT_prompt1'
+data_source = 'downstream_application_code'
 with open(f'data/versicode_input/{input_file_name}.json', 'r') as f:
     data = json.load(f)
 
@@ -14,7 +16,7 @@ with open('longbench_config/buildContext.json', 'r') as template_file:
 
 '''step to add context to completed_code.json'''
 # Create a cache directory
-cache_dir = 'data/context_cache/downstream_application/version_corpus'
+cache_dir = f'data/context_cache/{data_source}/version_corpus'
 os.makedirs(cache_dir, exist_ok=True)
 
 # Iterate through items in completed_code.json
@@ -25,7 +27,7 @@ for item in data:
     version = extract_version(version)
     if dependency and version:
         # Construct the path to the corresponding corpus file
-        corpus_file = f'data/Corpus/downstream_application_code/version_corpus/{dependency}/{version}.jsonl'
+        corpus_file = f'data/Corpus/{data_source}/version_corpus/{dependency}/{version}.jsonl'
         
         # Construct the path for the cache file
         cache_file = f'{cache_dir}/{dependency}/{version}.json'
@@ -85,7 +87,7 @@ for item in data:
 #     item['answers'] = [item.pop('answer')]
 
 # Save the modified data back to the JSON file
-with open(f"data/versicode_input/{input_file_name}_dac_Context.json", "w") as f:
+with open(f"data/versicode_input/{input_file_name}_daContext.json", "w") as f:
     json.dump(data, f, indent=2)
 
 print("JSON file has been updated successfully.")

@@ -139,6 +139,31 @@ def get_ISM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
 
     score_list = sorted(score_list, reverse=True)
     return score_list
+def get_ISM_noveri(answer_code:str, model_output_list:list, asnwer_name:str)->list:
+    """
+    compute ISM, return an ordered list of scores
+    :return:
+    """
+    score_list = []
+    for code in model_output_list:
+
+        # if asnwer_name not in code or is_code_valid(code) == False:
+        #     score_list.append(0)
+        #     continue
+
+
+
+        identifiers_ans, identifiers_output = get_token(answer_code, code)
+        max_len, elements = longest_common_prefix_between_lists_with_elements(identifiers_ans, identifiers_output)
+        if max_len != 0:
+            base_element_len = max(len(elements[0]), len(elements[1]))
+            temp_score = max_len/base_element_len
+            score_list.append(temp_score)
+        else:
+            score_list.append(0)
+
+    score_list = sorted(score_list, reverse=True)
+    return score_list
 
 def get_ISM_without_verification(answer_code:str, model_output_list:list, asnwer_name:str)->list:
     """
@@ -221,7 +246,33 @@ def get_PM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
 
     score_list = sorted(score_list, reverse=True)
     return score_list
+def get_PM_noveri(answer_code:str, model_output_list:list, asnwer_name:str)->list:
+    """
+    compute PM，return an ordered list of scores
+    :return:
+    """
 
+    score_list = []
+    for code in model_output_list:
+        # if asnwer_name not in code or is_code_valid(code) == False:
+        #     score_list.append(0)
+        #     continue
+
+
+
+        ans_list = get_token_per_line(answer_code)
+        output_token_list = get_token_per_line(code)
+        max_len, len1, len2 = longest_common_prefix_with_lengths(ans_list, output_token_list)
+        base_element_len = max(len1, len2)
+
+        if base_element_len != 0:
+            temp_score = max_len/base_element_len
+            score_list.append(temp_score)
+        else:
+            score_list.append(0)
+
+    score_list = sorted(score_list, reverse=True)
+    return score_list
 def get_score(score_list:list, k):
     """
     compute score@n,k
@@ -242,9 +293,14 @@ def get_score(score_list:list, k):
 
 
 
-# block_json_path = '../../dataset/final_dataset/code_editing_result_new_to_old/Llama-3-70b-chat-hf/test_without_docstring.json'   #code editing new to old的结果
-# block_json_path = 'output/experiment241013/da_block_woCT_versicode_m.jsonl'
-block_json_path = 'output/experiment241013/downstream_application_code_block_out.json'
+import argparse
+
+parser = argparse.ArgumentParser(description='Evaluate the predictive ability of blocks')
+parser.add_argument('-f',type=str, help='Path to the block JSON file')
+
+args = parser.parse_args()
+block_json_path = args.f
+
 with open(block_json_path, 'r', encoding='utf-8')as fr:
     lodict = json.load(fr)
 data_dict = lodict
@@ -252,7 +308,8 @@ data_list = data_dict['data']
 data_len = len(data_list)
 sum_ISM = 0
 sum_PM = 0
-
+sum_nvISM = 0
+sum_nvPM = 0
 for data in data_list:
     model_output_list = eval(data['model_output_block_clear']) #change block or token or line
     # model_output_list = data['model_output_block_clear']
@@ -260,8 +317,6 @@ for data in data_list:
     for o in model_output_list:
         temp_out = o.replace('```python', '')
         temp_out = temp_out.replace('```', '')
-        temp_out = temp_out.replace('\\n', '\n')  # Convert \\n to \n
-        
         temp_list.append(temp_out)
     model_output_list = temp_list
     answer_code = data['code']    #common block
@@ -272,32 +327,42 @@ for data in data_list:
 
     # answer_code = data['old_code']  # code editing new to old
     # answer_name = data['old_name']  # code editing new to old
-    print("answer_code: ",answer_code)
-    print("answer_name: ",answer_name)
-    print("model_output_list: ",model_output_list)
+    # print("answer_code: ",answer_code)
+    # print("answer_name: ",answer_name)
+    # print("model_output_list: ",model_output_list)
     # ISM_score_list = get_ISM(answer_code, model_output_list, answer_name)
     # PM_score_list = get_PM(answer_code, model_output_list, answer_name)
     ISM_score_list = get_ISM(answer_code, model_output_list, answer_name)
     PM_score_list = get_PM(answer_code, model_output_list, answer_name)
-    print("ISM_score_list:", ISM_score_list)
-    print("PM_score_list:", PM_score_list)
+    # print("ISM_score_list:", ISM_score_list)
+    # print("PM_score_list:", PM_score_list)
 
-    if not ISM_score_list or not PM_score_list:
-        print("Warning: Empty score list for:")
-        print("answer_code:", answer_code)
-        print("answer_name:", answer_name)
-        print("model_output_list:", model_output_list)
-        continue  # Skip this iteration if either score list is empty
+    nvISM_score_list = get_ISM_noveri(answer_code, model_output_list, answer_name)
+    nvPM_score_list = get_PM_noveri(answer_code, model_output_list, answer_name)
+    # if not ISM_score_list or not PM_score_list:
+    #     print("Warning: Empty score list for:")
+    #     print("answer_code:", answer_code)
+    #     print("answer_name:", answer_name)
+    #     print("model_output_list:", model_output_list)
+    #     continue  # Skip this iteration if either score list is empty
 
-    #TODO:看看以下get_score如何使用
+
     ISM_score = get_score(ISM_score_list, 1)
     PM_score = get_score(PM_score_list, 1)
 
     sum_ISM += ISM_score
     sum_PM += PM_score
 
+    nvISM_score = get_score(nvISM_score_list, 1)
+    nvPM_score = get_score(nvPM_score_list, 1)
+
+    sum_nvISM += nvISM_score
+    sum_nvPM += nvPM_score
+
 print(f"ISM：{sum_ISM/data_len}")
 print(f"PM：{sum_PM/data_len}")
+print(f"nvISM：{sum_nvISM/data_len}")
+print(f"nvPM：{sum_nvPM/data_len}")
 
 
 

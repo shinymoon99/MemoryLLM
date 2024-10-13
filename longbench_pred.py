@@ -87,13 +87,13 @@ def get_pred(model, tokenizer, data, max_length, max_gen, prompt_format, dataset
             # truncate to fit max_length (we suggest truncate in the middle, since the left and right side may contain crucial instructions)
             tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt").input_ids[0]
 
-        else:
-            # if "Question" in prompt.split("\n\n")[-1]:
-            #     tokenized_prompt = tokenizer("\n\n".join(prompt.split("\n\n")[:-1]), truncation=False, return_tensors="pt").input_ids[0]
-            # else:
-            #     tokenized_prompt = tokenizer("\n\n".join(prompt.split("\n\n")[:-2]), truncation=False, return_tensors="pt").input_ids[0]
-            prompt_context = prompt.split(prompt_format.split("{context}")[-1].split("Question")[0])[0]
-            tokenized_prompt = tokenizer(prompt_context, truncation=False, return_tensors="pt").input_ids[0]
+        # else:
+        #     # if "Question" in prompt.split("\n\n")[-1]:
+        #     #     tokenized_prompt = tokenizer("\n\n".join(prompt.split("\n\n")[:-1]), truncation=False, return_tensors="pt").input_ids[0]
+        #     # else:
+        #     #     tokenized_prompt = tokenizer("\n\n".join(prompt.split("\n\n")[:-2]), truncation=False, return_tensors="pt").input_ids[0]
+        #     prompt_context = prompt.split(prompt_format.split("{context}")[-1].split("Question")[0])[0]
+        #     tokenized_prompt = tokenizer(prompt_context, truncation=False, return_tensors="pt").input_ids[0]
 
         if "chatglm3" in model_name:
             tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt", add_special_tokens=False).input_ids[0]
@@ -226,7 +226,142 @@ def get_pred(model, tokenizer, data, max_length, max_gen, prompt_format, dataset
         pred = post_process(pred, model_name)
         preds.append({"model_output": pred, "answer": json_obj["answer"],"description": json_obj["description"], "all_classes": json_obj["all_classes"], "length": json_obj["length"], "id": json_obj["id"],"code":json_obj["masked_code"]})
     return preds
+def get_pred_versi(model, tokenizer, data, max_length, max_gen, prompt_format, dataset, device, model_name, retrieval=None, exclude_or=False):
 
+    preds = []
+
+    if 'memory' in model_name:
+        backup_memory = model.memory.clone().detach().cpu()
+
+    count = 0
+    print("data len:",len(data))
+    for json_obj in tqdm(data):
+
+        count += 1
+        # if count == 5: break
+
+        # if exclude_or:
+        #     if "or" in json_obj['input']:
+        #         continue
+
+        if 'memory' in model_name:
+            model.memory.data = backup_memory.clone().detach().to(device)
+
+        prompt = prompt_format.format(**json_obj)
+
+        if retrieval is None:
+            # truncate to fit max_length (we suggest truncate in the middle, since the left and right side may contain crucial instructions)
+            tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt").input_ids[0]
+
+        # else:
+        #     # if "Question" in prompt.split("\n\n")[-1]:
+        #     #     tokenized_prompt = tokenizer("\n\n".join(prompt.split("\n\n")[:-1]), truncation=False, return_tensors="pt").input_ids[0]
+        #     # else:
+        #     #     tokenized_prompt = tokenizer("\n\n".join(prompt.split("\n\n")[:-2]), truncation=False, return_tensors="pt").input_ids[0]
+        #     prompt_context = prompt.split(prompt_format.split("{context}")[-1].split("Question")[0])[0]
+        #     tokenized_prompt = tokenizer(prompt_context, truncation=False, return_tensors="pt").input_ids[0]
+        
+
+        if max_length > 0 and len(tokenized_prompt) > max_length:
+
+            # half = int(max_length/2)
+            # prompt = tokenizer.decode(tokenized_prompt[:half], skip_special_tokens=True)+tokenizer.decode(tokenized_prompt[-half:], skip_special_tokens=True)
+
+            if retrieval is None:
+                # truncate at the beginning:
+                prompt = tokenizer.decode(tokenized_prompt[-(max_length - max_gen):], skip_special_tokens=True)
+            
+            # else:
+            #     tokenized_prompt = tokenizer(
+            #         tokenizer.decode(tokenized_prompt[-(max_length - max_gen):], skip_special_tokens=True),
+            #         truncation=False, return_tensors="pt", add_special_tokens=False
+            #     ).input_ids[0]
+
+        if dataset not in ["trec", "triviaqa", "samsum", "lsht", "lcc", "repobench-p"]: # chat models are better off without build prompts on these tasks
+            prompt = build_chat(tokenizer, prompt, model_name)
+
+        elif 'memory' in model_name:
+
+            contexts_ids = []
+
+
+            # if retrieval is not None:
+            #     parts = []
+            #     for i in range(0, len(tokenized_prompt), 512):
+            #         parts.append(tokenized_prompt[i:i+512])
+            #     parts = [tokenizer.decode(part) for part in parts]
+                
+            #     # if "Question" in prompt.split("\n\n")[-1]:
+            #     #     query = prompt.split("\n\n")[-1]
+            #     # else:
+            #     #     query = "\n\n".join(prompt.split("\n\n")[-2:])
+            #     query = prompt[len(prompt_context):]
+        
+            #     # retriever = BM25Retriever.from_texts(parts)
+            #     # retrieve the context from pre_prompt:
+            #     retriever = BM25Retriever.from_documents([Document(page_content=part) for part in parts])
+
+            #     result = retriever.get_relevant_documents(json_obj['input'], top_k=8)
+            #     result = " ".join([r.page_content for r in result])
+
+            #     prompt = result + query
+
+            prompt_ids = tokenizer(prompt, add_special_tokens=False, truncation=False).input_ids
+            while len(prompt_ids) > 0:
+                if contexts_ids == []:
+                    contexts_ids.append(prompt_ids[-(512-max_gen):])
+                    prompt_ids = prompt_ids[:-(512-max_gen)]
+                else:
+                    contexts_ids.append(prompt_ids[-512:])
+                    prompt_ids = prompt_ids[:-512]
+
+            contexts_ids = contexts_ids[::-1]
+            contexts_ids = [torch.tensor(context_ids).to(device) for context_ids in contexts_ids]
+            
+            sentence = contexts_ids[-1]
+            contexts_ids = contexts_ids[:-1]
+
+        # else:
+        #     input = tokenizer(prompt, truncation=False, return_tensors="pt").to(device)
+        
+        if dataset == "samsum": # prevent illegal output on samsum (model endlessly repeat "\nDialogue"), might be a prompting issue
+            raise NotImplementedError
+            output = model.generate(
+                **input,
+                max_new_tokens=max_gen,
+                num_beams=1,
+                do_sample=False,
+                temperature=1.0,
+                min_length=context_length+1,
+                eos_token_id=[tokenizer.eos_token_id, tokenizer.encode("\n", add_special_tokens=False)[-1]],
+            )[0]
+        else:
+
+            with torch.no_grad():
+
+                for context in contexts_ids:
+                    model.inject_memory(
+                        context.unsqueeze(0).to(device),
+                        torch.ones(context.shape[0] + model.num_tokens).long().unsqueeze(0).to(device),
+                        update_memory=True
+                    )
+                
+                context_length = sentence.shape[0]
+                output = model.generate(
+                    input_ids=sentence.unsqueeze(0).cuda(),
+                    attention_mask=torch.ones(sentence.shape[0] + model.num_blocks * model.num_tokens).unsqueeze(0).long().cuda(),
+                    max_new_tokens=max_gen,
+                    num_beams=1,
+                    do_sample=False,
+                    temperature=1.0,
+                )[0]
+
+
+
+        pred = tokenizer.decode(output[context_length:], skip_special_tokens=True)
+        pred = post_process(pred, model_name)
+        preds.append({"model_output": pred, "answer": json_obj["answer"],"description": json_obj["description"], "all_classes": json_obj["all_classes"], "length": json_obj["length"], "id": json_obj["id"],"code":json_obj["masked_code"]})
+    return preds
 def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
